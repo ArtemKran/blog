@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% load bootstrap3 %}
+<title>{% block bootstrap3_title %}PYTHON BLOG{% endblock %}</title>
+{% block bootstrap3_extra_head %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/css/styles.css' %}">
+{% endblock %}
+
+{% block write_edit_post %}
+    <div class="container main_content">
+        <div class="row">
+            <div class="blog-main">
+                <div class="col-sm-10 blog-main">
+                    <form action="" class="form-horizontal write-edit-post" method="post">
+                        {% csrf_token %}
+                        {% if write %}
+                        <div class="form-group">
+                            <label for="title" class="col-sm-2 control-label">Заголовок: </label>
+                            <div class="col-sm-10">
+                                <input type="text" id="title" class="form-control" placeholder="Заголовок" name="title">
+                            </div>
+                        </div>
+                            <div class="form-group">
+                                <label for="author" class="col-sm-2 control-label">Автор: </label>
+                                <div class="col-sm-10">
+                                    <input type="text" id="author" class="form-control" placeholder="Ваше имя" name="author">
+                                </div>
+                            </div>
+                        <div class="form-group">
+                            <label for="contents_of_post" class="col-sm-2 control-label">Текст статьи: </label>
+                            <div class="col-sm-10">
+                                <textarea id="contents_of_post" class="form-control" rows="3" name="contents_of_post">
+                                </textarea>
+                            </div>
+                        </div>
+                        {% else %}
+                            <input type="hidden" id="date_of_change" name="date_of_change" value="{{ date }}">
+                            <h4>При редактировании статьи, редактором указывается последний редактирующий.</h4>
+                            <div class="form-group">
+                            <label for="title" class="col-sm-2 control-label">Заголовок: </label>
+                            <div class="col-sm-10">
+                                <input type="text" id="title" class="form-control" placeholder="Заголовок" name="title" value="{{ post.title }}">
+                            </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="redactor" class="col-sm-2 control-label">Редактор: </label>
+                                <div class="col-sm-10">
+                                    <input type="text" id="redactor" class="form-control" placeholder="Ваше имя" name="redactor">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="contents_of_post" class="col-sm-2 control-label">Текст статьи: </label>
+                                <div class="col-sm-10">
+                                    <textarea id="contents_of_post" class="form-control" rows="3" name="contents_of_post">{{ post.contents_of_post }}
+                                    </textarea>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                          <button type="submit" class="btn btn-default">Отправить</button>
+                        </div>
+                      </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+

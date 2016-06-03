@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% load bootstrap3 %}
+<title>{% block bootstrap3_title %}PYTHON BLOG{% endblock %}</title>
+{% block bootstrap3_extra_head %}
+    {% load i18n %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/css/styles.css' %}">
+{% endblock %}
+{% block read_post %}
+    <div class="container main_content">
+        <div class="row">
+            <div class="blog-main">
+                <div class="col-sm-10 blog-main">
+                    <div class="article">
+                        <h2 class="grey">{{ read_post.title }}</h2>
+                        <p class="article-content">{{ read_post.contents_of_post }}</p>
+                        <p><span class="grey">Автор: </span>{{ read_post.author }}</p>
+                        <p><span class="grey">Дата создания: </span>{{ read_post.date_of_creation }}</p>
+                        {% if read_post.redactor %}
+                            <p><span class="grey">Редактор: </span>{{ read_post.redactor }}</p>
+                        {% endif %}
+                        <a href="/edit/{{ read_post.id }}/">Редактировать</a>
+                    </div>
+                    <div id="comments">
+                        <h4 class="grey">Предыдущие комментарии</h4>
+                        {% load mptt_tags %}
+                        <ul class="parent-comment">
+                        {% recursetree comment_list %}
+                            <li>
+                                <p class="author">
+                                    {{ node.author }}
+                                    <span>Добавлено: {{ node.date_of_creation }}</span>
+                                </p>
+                                <p class="comment">{{ node.comment_text }}</p>
+                                <input type="hidden" value="{{ node.id }}">
+                                <p class="answer">Ответить</p>
+                                {% if not node.is_leaf_node %}
+                                    <ul class="children"  id="{{ node.id }}">
+                                        {{ children }}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endrecursetree %}
+                        </ul>
+                    </div>
+                    <h4 class="read-comment">Написать комментарий</h4>
+                    <form action="/set_comment/" class="form-horizontal" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input type="hidden" name="parent_id">
+                            <input type="hidden" name="post" value="{{ read_post.id }}">
+                            <label for="author" class="col-sm-2 control-label">Автор: </label>
+                            <div class="col-sm-10">
+                                <input type="text" id="author" class="form-control" placeholder="Ваше имя" name="author">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="col-sm-2 control-label">Email:</label>
+                            <div class="col-sm-10">
+                                <input type="email" id="email" class="form-control" placeholder="Ваш email" name="email">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="comment_text" class="col-sm-2 control-label">Текст комментария</label>
+                            <div class="col-sm-10">
+                                <textarea id="comment_text" class="form-control" rows="3" name="comment_text"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                          <button type="submit" class="btn btn-default">Отправить</button>
+                        </div>
+                      </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block bootstrap3_extra_script %}
+    <script>
+        $('#comments').find('.answer').each(function (i, elem) {
+            var parentId = $(this).prev().val();
+            $(elem).click(function () {
+                $('#author').focus();
+                console.log(parentId);
+                $('form input[name=parent_id]').val(parentId)
+            });
+        });
+    </script>
+{% endblock %}

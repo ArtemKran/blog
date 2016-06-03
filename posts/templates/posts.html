@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% load bootstrap3 %}
+<title>{% block bootstrap3_title %}PYTHON BLOG{% endblock %}</title>
+{% block bootstrap3_extra_head %}
+    {% load i18n %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'blog/css/styles.css' %}">
+{% endblock %}
+
+{% block posts %}
+    <div class="container main_content another-one-class">
+        <div class="row">
+            <div class="blog-main">
+                <div class="col-sm-10 blog-main">
+                    <div class="header clearfix">
+                    <nav>
+                      <ul class="nav nav-pills pull-right">
+                        <li role="presentation" class="active"><a href="/write/">Написать статью</a></li>
+                      </ul>
+                    </nav>
+                    <h3 class="text-muted">PYTHON BLOG</h3>
+                  </div>
+                    {% for post in posts %}
+                    <div class="article">
+                        <a href="{{ post.id }}" class="title">{{ post.title }}</a>
+                        <p class="article-content">{{ post.contents_of_post }}</p>
+                        <p><span class="grey">Автор: </span>{{ post.author }}</p>
+                        <p><span class="grey">Дата создания: </span>{{ post.date_of_creation }}</p>
+                        {% if post.redactor %}
+                            <p><span class="grey">Автор: </span>{{ post.redactor }}</p>
+                        {% endif %}
+                        <p>
+                            <a class="btn btn-default" href="{{ post.id }}" role="button">Читать дальше &raquo;</a>
+                        </p>
+                    </div>
+                    {% endfor %}
+                    <nav>
+                        <ul class="pagination">
+                            {% if posts.has_previous %}
+                              <li>
+                                  <a href="?page/{{ posts.previous_page_number }}/">&laquo;</a>
+                              </li>
+                            {% else %}
+                              <li>
+                                  <a href="">&laquo;</a>
+                              </li>
+                            {% endif %}
+                            {% for page in posts.paginator.page_range %}
+                              {% if page == posts.number %}
+                                  <li>
+                                      <span class="current"><b>{{ page }}</b></span>
+                                 </li>
+                              {% else %}
+                                  <li>
+                                      <a href="?page={{ page }}">{{ page }}</a>
+                                  </li>
+                              {% endif %}
+                            {% endfor %}
+                            {% if posts.has_next %}
+                              <li>
+                                  <a href="?page={{ posts.next_page_number }}">&raquo;</a>
+                              </li>
+                            {% else %}
+                              <li>
+                                  <a href="">&raquo;</a>
+                              </li>
+                            {% endif %}
+                        </ul>
+                  </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
