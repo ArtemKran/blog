@@ -16,19 +16,19 @@
                     <div class="header clearfix">
                     <nav>
                       <ul class="nav nav-pills pull-right">
-                        <li role="presentation" class="active"><a href="/write/">Написать статью</a></li>
+                        <li role="presentation" class="active"><a href={% url 'write_post' %}>Написать статью</a></li>
                       </ul>
                     </nav>
                     <h3 class="text-muted">PYTHON BLOG</h3>
                   </div>
-                    {% for post in posts %}
+                    {% for post in post_list %}
                     <div class="article">
                         <a href="{{ post.id }}" class="title">{{ post.title }}</a>
-                        <p class="article-content">{{ post.contents_of_post }}</p>
+                        <p class="article-content">{{ post.contents_of_post|linebreaks|truncatechars:300 }}</p>
                         <p><span class="grey">Автор: </span>{{ post.author }}</p>
                         <p><span class="grey">Дата создания: </span>{{ post.date_of_creation }}</p>
                         {% if post.redactor %}
-                            <p><span class="grey">Автор: </span>{{ post.redactor }}</p>
+                            <p><span class="grey">Редактор: </span>{{ post.redactor }}</p>
                         {% endif %}
                         <p>
                             <a class="btn btn-default" href="{{ post.id }}" role="button">Читать дальше &raquo;</a>
@@ -37,17 +37,17 @@
                     {% endfor %}
                     <nav>
                         <ul class="pagination">
-                            {% if posts.has_previous %}
+                            {% if page_obj.has_previous %}
                               <li>
-                                  <a href="?page/{{ posts.previous_page_number }}/">&laquo;</a>
+                                  <a href="?page/{{ page_obj.previous_page_number }}/">&laquo;</a>
                               </li>
                             {% else %}
                               <li>
                                   <a href="">&laquo;</a>
                               </li>
                             {% endif %}
-                            {% for page in posts.paginator.page_range %}
-                              {% if page == posts.number %}
+                            {% for page in paginator.page_range %}
+                              {% if page == page_obj.number %}
                                   <li>
                                       <span class="current"><b>{{ page }}</b></span>
                                  </li>
@@ -57,9 +57,9 @@
                                   </li>
                               {% endif %}
                             {% endfor %}
-                            {% if posts.has_next %}
+                            {% if page_obj.has_next %}
                               <li>
-                                  <a href="?page={{ posts.next_page_number }}">&raquo;</a>
+                                  <a href="?page={{ page_obj.next_page_number }}">&raquo;</a>
                               </li>
                             {% else %}
                               <li>
@@ -67,7 +67,7 @@
                               </li>
                             {% endif %}
                         </ul>
-                  </nav>
+                    </nav>
                 </div>
             </div>
         </div>

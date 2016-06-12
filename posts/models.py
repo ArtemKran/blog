@@ -1,7 +1,5 @@
 from django.db import models
 from django.utils import timezone
-from mptt.models import MPTTModel, TreeForeignKey
-
 
 __author__ = 'Artem Kraynev'
 
@@ -24,20 +22,20 @@ class Post(models.Model):
         db_table = 'post'
 
 
-class Comment(MPTTModel):
+class Comment(models.Model):
     """
     Модель статьи
     """
     post = models.ForeignKey(Post)
-    date_of_creation = models.DateTimeField(auto_now=False, auto_now_add=True)
+
+    date_of_creation = models.DateTimeField(auto_now_add=True)
     author = models.CharField(max_length=100)
     email = models.EmailField(max_length=75)
     comment_text = models.TextField()
-    parent = TreeForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='children', db_index=True)
+
+    path = models.IntegerField(blank=True, editable=False)
+    depth = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         db_table = 'comment'
-
-    class MPTTMeta:
-        level_attr = 'mptt_level'
 

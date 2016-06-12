@@ -1,37 +1,27 @@
-from django.shortcuts import render_to_response, redirect
-from django.template.context_processors import csrf
+from django.shortcuts import redirect
 from .models import Post, Comment
 from .form import WritePostForm, EditPostForm, CommentForm
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.views.generic.list import ListView
 from datetime import datetime
-
+from django.views.generic.edit import FormView, UpdateView
+from django.core.urlresolvers import reverse
 
 __author__ = 'Artem Kraynev'
 
 
-def posts(request):
+class PostListView(ListView):
     """
     Главная страница с постами
     """
-    html = 'posts.html'
-    # Можно было использовать и order_by()
-    # и get_object_or_404(), но думаю для тестового
-    # не принципиально - исключение или 400
-    posts_all = [i for i in reversed(Post.objects.all())]
-    paginator = Paginator(posts_all, 4)
-    page = request.GET.get('page')
-    try:
-        posts = paginator.page(page)
-    except PageNotAnInteger:
-        posts = paginator.page(1)
-    except EmptyPage:
-        posts = paginator.page(paginator.num_pages)
-    post_dict = {
-        'posts': posts,
-    }
-    post_dict.update(csrf(request))
-    return render_to_response(html, post_dict)
+    template_name = 'posts.html'
+    paginate_by = 5
+
+    def get_queryset(self):
+        return Post.objects.all().order_by('-id')
+
+    def get_context_data(self, **kwargs):
+        context = super(PostListView, self).get_context_data(**kwargs)
+        return context
 
 
 class CommentsListView(ListView):
@@ -46,68 +36,79 @@ class CommentsListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(CommentsListView, self).get_context_data(**kwargs)
+        context['comments'] = Comment.objects.filter(
+            post_id=self.kwargs['post_id']
+        ).order_by('path')
         context['read_post'] = Post.objects.get(id=self.kwargs['post_id'])
-        context['comments_form'] = CommentForm()
+        context['form'] = CommentForm()
         return context
 
 
-def read_post_and_write_comment(request):
+def send_comment(request):
     """
     Обработка формы комментариев
     """
+    form = CommentForm(request.POST)
     if request.POST:
-        url = '/' + request.POST['post'] + '/'
-        comment_form = CommentForm(request.POST)
-        if comment_form.is_valid():
-            parent_id = comment_form.data['parent_id']
-            if parent_id != '':
-                comment_form.instance.parent = Comment.objects.get(id=parent_id)
-                comment_form.save()
+        if form.is_valid():
+            temp_form = form.save(commit=False)
+            parent = form['parent'].value()
+            if parent == '':
+                temp_form.path = 0
+                temp_form.save()
             else:
-                comment_form.save()
-            return redirect(url)
+                node = Comment.objects.get(id=parent)
+                temp_form.depth = node.depth + 1
+                temp_form.path = node.path
+                temp_form.save()
+                temp_form.path = temp_form.id
+            temp_form.save()
+    return redirect(
+        reverse('comment_post', kwargs={'post_id': form.data['post']})
+    )
 
 
-def write_post(request):
+class PostWriteView(FormView):
     """
     Страница написания статьи
     """
-    html = 'write_edit_post.html'
-    write_post_dict = {
-        'write': True,
-        'form': WritePostForm(),
-    }
-    write_post_dict.update(csrf(request))
-    if request.POST:
-        write_post_form = WritePostForm(request.POST)
-        if write_post_form.is_valid():
-            write_post_form.save()
-            return redirect('/')
-        else:
-            write_post_dict['form'] = write_post_form
-    return render_to_response(html, write_post_dict)
+    template_name = 'write_edit_post.html'
+    form_class = WritePostForm
+    success_url = '/'
+    write = True
+
+    def form_valid(self, form):
+        form.save()
+        return super(PostWriteView, self).form_valid(form)
 
 
-def edit_post(request, post_id):
+class PostEditView(UpdateView):
     """
     Страница редактирования статьи
     """
-    html = 'write_edit_post.html'
-    now = datetime.now()
-    edit_post_dict = {
-        'post': Post.objects.get(id=post_id),
-        'form': EditPostForm(),
-        'date': datetime.strftime(now, "%d.%m.%Y"),
-    }
-    edit_post_dict.update(csrf(request))
-    if request.POST:
-        edit_post_form_query = Post.objects.get(id=post_id)
-        edit_post_form = EditPostForm(
-            request.POST, instance=edit_post_form_query
+    template_name = 'write_edit_post.html'
+    form_class = EditPostForm
+    write = False
+    pk_url_kwarg = 'post_id'
+    query_pk_and_slug = 'post_id'
+    model = Post
+
+    def get(self, request, *args, **kwargs):
+        self.initial['post'] = Post.objects.get(id=self.kwargs['post_id'])
+        return super(PostEditView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.success_url = reverse(
+            'comment_post',
+            kwargs={'post_id': self.kwargs['post_id']}
         )
-        if edit_post_form.is_valid():
-            edit_post_form.save()
-            return redirect('/')
-        else:
-            edit_post_dict['form'] = edit_post_form
-    return render_to_response(html, edit_post_dict)
+        return super(PostEditView, self).post(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(PostEditView, self).get_context_data(**kwargs)
+        now = datetime.now()
+        context['date'] = datetime.strftime(now, "%d.%m.%Y")
+        context['post'] = Post.objects.get(id=self.kwargs['post_id'])
+        return context
+
+
